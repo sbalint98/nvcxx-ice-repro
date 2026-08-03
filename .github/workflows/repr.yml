@@ -1,0 +1,23 @@
+name: Reproduce nvcxx ICE
+
+on: workflow_dispatch
+
+jobs:
+  compile-reproducer:
+    runs-on: ubuntu-latest
+    container: sbalint98/adaptivecpp-repro:ubuntu2204
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+      - name: print system info
+        run: |
+          lscpu
+          free -m
+          uname -a
+          df -h
+
+      - name: Compiler reproducer
+        run: |
+          /opt/nvidia/hpc_sdk/Linux_x86_64/26.5/compilers/bin/nvc++  repro.cpp 
