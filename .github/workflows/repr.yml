@@ -16,7 +16,7 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - id: set-matrix
-        run: echo "matrix=$(jq -c -n --argjson n \"${{ inputs.num_tasks || 10 }}\" '[range(1, $n + 1)]')" >> "$GITHUB_OUTPUT"
+        run: echo "matrix=$(jq -c -n --argjson n ${{ inputs.num_tasks || 10 }} '[range(1, $n + 1)]')" >> "$GITHUB_OUTPUT"
 
   compile-reproducer:
     needs: setup
