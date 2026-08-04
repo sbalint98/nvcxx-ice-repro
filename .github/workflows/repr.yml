@@ -1,17 +1,52 @@
 name: Reproduce nvcxx ICE
 
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+    inputs:
+      num_tasks:
+        description: 'Number of tasks to launch'
+        required: true
+        default: 10
+        type: number
 
 jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - id: set-matrix
+        run: echo "matrix=$(jq -c -n --argjson n \"${{ inputs.num_tasks || 10 }}\" '[range(1, $n + 1)]')" >> "$GITHUB_OUTPUT"
+
   compile-reproducer:
+    needs: setup
+    strategy:
+      fail-fast: false
+      matrix:
+        task: ${{ fromJson(needs.setup.outputs.matrix) }}
     runs-on: ubuntu-latest
     container: sbalint98/adaptivecpp-repro:ubuntu2204
 
     steps:
+      - name: Check CPU
+        id: check_cpu
+        run: |
+          lscpu_output=$(lscpu)
+          if echo "$lscpu_output" | grep -q "9V74" && ! echo "$lscpu_output" | grep -i -q "avx512"; then
+            echo "continue=true" >> $GITHUB_OUTPUT
+            echo "✅ **Task ${{ matrix.task }}** landed on a 9V74 runner without AVX512!" >> $GITHUB_STEP_SUMMARY
+            echo "CPU is 9V74 without avx512. Continuing..."
+          else
+            echo "Not a 9V74 without avx512. Skipping remaining steps."
+          fi
+
       - uses: actions/checkout@v4
+        if: steps.check_cpu.outputs.continue == 'true'
         with:
           submodules: 'recursive'
+          
       - name: print system info
+        if: steps.check_cpu.outputs.continue == 'true'
         run: |
           lscpu
           free -m
@@ -20,5 +55,6 @@ jobs:
           /opt/nvidia/hpc_sdk/Linux_x86_64/26.5/compilers/bin/nvcpuid
 
       - name: Compiler reproducer
+        if: steps.check_cpu.outputs.continue == 'true'
         run: |
           /opt/nvidia/hpc_sdk/Linux_x86_64/26.5/compilers/bin/nvc++ -tp znver2 repro.cpp 
