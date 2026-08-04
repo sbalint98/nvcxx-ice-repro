@@ -21,4 +21,4 @@ jobs:
 
       - name: Compiler reproducer
         run: |
-          /opt/nvidia/hpc_sdk/Linux_x86_64/26.5/compilers/bin/nvc++  repro.cpp 
+          /opt/nvidia/hpc_sdk/Linux_x86_64/26.5/compilers/bin/nvc++ -mno-avx512f  repro.cpp 
