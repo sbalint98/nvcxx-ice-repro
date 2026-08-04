@@ -17,6 +17,7 @@ jobs:
           free -m
           uname -a
           df -h
+          /opt/nvidia/hpc_sdk/Linux_x86_64/26.5/compilers/bin/nvcpuid
 
       - name: Compiler reproducer
         run: |
